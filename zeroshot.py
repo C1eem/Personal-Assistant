@@ -1,6 +1,5 @@
 from transformers import pipeline
 from config import *
-import json
 
 
 class ZeroShotClassifier:
@@ -9,7 +8,7 @@ class ZeroShotClassifier:
         self.classifier = pipeline("zero-shot-classification",
                                    model=MODEL_NAME)  # одна из популярных моделей для zero-shot
 
-    def classify(self, text, candidate_labels=["спам", "заявка", "вопрос"]):
+    def classify(self, text, candidate_labels):
         """
         Классифицирует текст на один из candidate_labels
         :param text: входной текст
