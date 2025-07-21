@@ -13,7 +13,7 @@ class ZeroShotClassifier:
         Классифицирует текст на один из candidate_labels
         :param text: входной текст
         :param candidate_labels: список строк с метками классов, например ["спам", "заявка", "вопрос"]
-        :return: JSON с вероятностями по классам
+        :return: наиболее вероятный класс
         """
         result = self.classifier(text, candidate_labels)
         # result — словарь с полями: 'sequence', 'labels', 'scores'
@@ -26,3 +26,19 @@ class ZeroShotClassifier:
 
         #return json.dumps(output, ensure_ascii=False, indent=2)
         return result["labels"][0]
+
+
+class PromptedClassifier:
+    def __init__(self):
+        self.generator = pipeline("text2text-generation", model="google/flan-t5-base")
+
+    def classify(self, text):
+        prompt = f"Классифицируй текст по категориям: {', '.join(LABELS)}. Текст: {text}. Отвечай одним словом."
+        output = self.generator(prompt, max_length=10)[0]['generated_text'].strip().lower()
+        if output not in LABELS:
+            return "неизвестно"
+        return output
+
+if __name__ == "__main__":
+    model = PromptedClassifier()
+    print(model.classify("Когда придёт мой заказ?"))

@@ -1,16 +1,17 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from config import *
-from zeroshot import ZeroShotClassifier
+from DeepSeekR1 import DeepSeekAPI
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
-model = ZeroShotClassifier()
+model = DeepSeekAPI(DEEP_API_TOKEN)
 
 @dp.message()
 async def start_handler(message: types.Message):
-    ans = model.classify(text=message.text, candidate_labels=LABELS)
-    await message.answer(ans)
+    await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    response = model.ask(text=message.text, labels=LABELS)
+    await message.answer(response)
 
 async def main():
     await dp.start_polling(bot)
