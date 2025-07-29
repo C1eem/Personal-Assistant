@@ -1,86 +1,140 @@
-import operator
 from typing_extensions import TypedDict
-from typing import List, Annotated
+from typing import List, Dict, Any
 from langgraph.graph import StateGraph, END
+from DeepSeekR1 import DeepSeekAPI
+from config import *
+from aiogram import types
+from database import UserMessagesDB
+
+
+llm = DeepSeekAPI(DEEP_API_TOKEN)
+
 
 class GraphState(TypedDict):
-    """
-    Описание структуры данных состояния графа.
-    Состояние графа - это словарь, содержащий информацию,
-    которую мы хотим передавать и изменять в каждом узле графа.
-    """
-
-    question: str     # Вопрос пользователя
-    generation: str   # LLM генерация
-    web_search: str   # Двоичное решение о запуске веб-поиска
-    max_retries: int  # Максимальное количество повторных попыток генерации
-    answers: int      # Количество сгенерированных ответов
-    loop_step: Annotated[int, operator.add]
-    documents: List[str]  # Список найденных документов
+    """Определение структуры состояния графа"""
+    user: types.Message
+    message: str  # Входное сообщение пользователя
+    response: str  # Текущий ответ системы
+    documents: List[str]  # Найденные документы (для вопросов)
+    status: str  # Текущий статус обработки
+    next_node: str  # Следующий узел для перехода
 
 
-def classify_message(state):
-    pass
+def classify_message(state: GraphState) -> Dict[str, Any]:
+    """Классификация входящего сообщения"""
+    message = state["message"]
+    response = llm.classify(text=message).lower()
 
-def retrieve(state):
-    pass
+    if "спам" in response:
+        return {"status": "spam", "next_node": "save_to_db"}
+    elif "заявка" in response:
+        return {"status": "application", "next_node": "collect_info"}
+    else:
+        return {"status": "question", "next_node": "retrieve"}
 
-def grade_documents(state):
-    pass
 
-def generate(state):
-    pass
+def retrieve(state: GraphState) -> Dict[str, Any]:
+    """Поиск информации по вопросу"""
+    # Здесь должен быть реальный поиск документов
+    return {
+        "documents": ["Документ 1", "Документ 2"],
+        "next_node": "grade_documents",
+        "response": "Найдена информация по вашему вопросу"
+    }
 
-def collect_info_from_client(state):
-    pass
 
-def save_to_db(state):
-    pass
+def grade_documents(state: GraphState) -> Dict[str, Any]:
+    """Оценка релевантности документов"""
+    return {
+        "documents": state["documents"],
+        "next_node": "generate",
+        "response": "Документы проверены на релевантность"
+    }
 
-def notify_manager(state):
-    pass
 
+def generate(state: GraphState) -> Dict[str, Any]:
+    """Генерация финального ответа"""
+    return {
+        "response": f"Ответ на основе документов: {state['documents']}",
+        "next_node": END
+    }
+
+
+def collect_info(state: GraphState) -> Dict[str, Any]:
+    """Сбор информации от клиента"""
+    #collected_data = llm.collect_info(state["message"])
+    collected_data = {"text": state["message"], "user_id": state["user"].from_user}
+    return {
+        "response": f"Собрана информация: {collected_data}",
+        "next_node": "save_to_db"
+    }
+
+
+async def save_to_db(state: GraphState) -> Dict[str, Any]:
+    """Сохранение информации в базу данных"""
+    db = UserMessagesDB(DSN)
+    await db.connect()
+    await db.create_table()
+    await db.save_message(state["user"])
+    return {
+        "status": "completed",
+        "next_node": END
+    }
+
+
+# Создаем граф
 workflow = StateGraph(GraphState)
 
-# Определение узлов
-# workflow.add_node("classify_message", classify_message)
+# Добавляем узлы
+workflow.add_node("classify", classify_message)
 workflow.add_node("retrieve", retrieve)
 workflow.add_node("grade_documents", grade_documents)
 workflow.add_node("generate", generate)
-workflow.add_node("collect_info_from_client", collect_info_from_client)
+workflow.add_node("collect_info", collect_info)
 workflow.add_node("save_to_db", save_to_db)
-workflow.add_node("notify_manager", notify_manager)
 
-workflow.set_conditional_entry_point(
-    classify_message,
-    {
-        "spam": "save_to_db",
-        "application": "collect_info_from_client",
-        "question": "retrieve"
-    },
-)
+# Устанавливаем начальную точку
+workflow.set_entry_point("classify")
 
-workflow.add_edge("retrieve", "grade_documents")
-workflow.add_edge("grade_documents", "generate")
-workflow.add_edge("collect_info_from_client", "save_to_db")
-workflow.add_edge("generate", END)
+# Настраиваем условные переходы
 workflow.add_conditional_edges(
-    "save_to_db",
-    save_to_db,
+    "classify",
+    lambda state: state["next_node"],  # Переход по значению next_node
     {
-        "collect_info_from_client": "collect_info_from_client",
-        "notify_manager": "notify_manager",
-        "end": END,
-
+        "retrieve": "retrieve",
+        "collect_info": "collect_info",
+        "save_to_db": "save_to_db"
     }
 )
+
+# Добавляем линейные переходы
+workflow.add_edge("retrieve", "grade_documents")
+workflow.add_edge("grade_documents", "generate")
+workflow.add_edge("generate", END)
+workflow.add_edge("collect_info", "save_to_db")
+workflow.add_edge("save_to_db", END)
+
+# Компилируем граф
 graph = workflow.compile()
-from IPython.display import Image, display
 
-# Компиляция графа
+#graph_image = graph.get_graph().draw_mermaid_png()
+#with open("../graph_image.png", "wb") as png:
+    #png.write(graph_image)
 
+async def run_agent(message: types.Message) -> str:
+    """Асинхронный запуск агента для обработки сообщения"""
+    inputs = {"user": message, "message": message.text}
+    last_response = "Не удалось обработать запрос."
 
-# Сохраняем картинку в файл
-graph_image = graph.get_graph().draw_mermaid_png()
-with open("../graph_image.png", "wb") as png:
-    png.write(graph_image)
+    try:
+        # Используем асинхронный поток графа
+        async for output in graph.astream(inputs):
+            if output:  # Если есть результат
+                last_node = list(output.keys())[0]
+                last_response = output[last_node].get("response", last_response)
+
+        return last_response
+
+    except Exception as e:
+        print(f"Ошибка обработки: {e}")
+        return "Произошла ошибка при обработке запроса"
