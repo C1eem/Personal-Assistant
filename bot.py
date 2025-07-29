@@ -1,12 +1,16 @@
 import asyncio
+import os
 from aiogram import Bot, Dispatcher, types
 from config import *
+from dotenv import load_dotenv
 from DeepSeekR1 import DeepSeekAPI
 from agent import run_agent
 
-bot = Bot(token=BOT_TOKEN)
+load_dotenv()
+
+bot = Bot(token=os.environ["BOT_TOKEN"])
 dp = Dispatcher()
-model = DeepSeekAPI(DEEP_API_TOKEN)
+model = DeepSeekAPI(os.environ["DEEP_API_TOKEN"])
 
 
 @dp.message()

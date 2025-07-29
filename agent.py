@@ -1,3 +1,4 @@
+import os
 from typing_extensions import TypedDict
 from typing import List, Dict, Any
 from langgraph.graph import StateGraph, END
@@ -5,9 +6,12 @@ from DeepSeekR1 import DeepSeekAPI
 from config import *
 from aiogram import types
 from database import UserMessagesDB
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-llm = DeepSeekAPI(DEEP_API_TOKEN)
+llm = DeepSeekAPI(os.environ["DEEP_API_TOKEN"])
 
 
 class GraphState(TypedDict):
