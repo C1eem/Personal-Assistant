@@ -1,3 +1,4 @@
+import os
 from typing_extensions import TypedDict
 from typing import List, Dict, Any
 from langgraph.graph import StateGraph, END
@@ -8,7 +9,11 @@ from database import UserMessagesDB
 import json
 import re
 
-llm = DeepSeekAPI(DEEP_API_TOKEN)
+from dotenv import load_dotenv
+
+load_dotenv()
+
+llm = DeepSeekAPI(os.environ["DEEP_API_TOKEN"])
 
 
 def clean_json_string(raw_str: str) -> str:
