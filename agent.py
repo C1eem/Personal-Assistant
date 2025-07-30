@@ -8,7 +8,7 @@ from aiogram import types
 from database import UserMessagesDB
 import json
 import re
-
+from RAG import ask_question
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -65,12 +65,13 @@ def classify_message(state: GraphState) -> Dict[str, Any]:
 
 def retrieve(state: GraphState) -> Dict[str, Any]:
     """Поиск информации по вопросу"""
-    print("retrieve")
+    text = state["message"]
+    response = ask_question(text)
     # Здесь должен быть реальный поиск документов
     return {
         "documents": ["Документ 1", "Документ 2"],
-        "next_node": "grade_documents",
-        "response": "Найдена информация по вашему вопросу"
+        "next_node": END,
+        "response": response
     }
 
 
@@ -158,7 +159,7 @@ workflow.add_conditional_edges(
 )
 
 # Добавляем линейные переходы
-workflow.add_edge("retrieve", "grade_documents")
+workflow.add_edge("retrieve", END)
 workflow.add_edge("grade_documents", "generate")
 workflow.add_edge("generate", END)
 workflow.add_edge("collect_info", "save_to_db")
@@ -173,7 +174,7 @@ graph = workflow.compile()
 
 async def run_agent(message: types.Message) -> str:
     """Асинхронный запуск агента для обработки сообщения"""
-    inputs = {"user": message, "message": message.text, "collected_info": {}}
+    inputs = {"user": message, "message": message.text}
     last_response = "Не удалось обработать запрос."
 
     try:

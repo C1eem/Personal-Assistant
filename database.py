@@ -1,6 +1,5 @@
 import asyncpg
 from aiogram import types
-from datetime import timezone, datetime
 
 class UserMessagesDB:
     def __init__(self, dsn: str):
@@ -79,12 +78,4 @@ class UserMessagesDB:
             rows = await conn.fetch('SELECT * FROM user_messages ORDER BY created at DESC')
             return [dict(row) for row in rows]
 
-
-    async  def ExampleRun(self, message: types.Message):
-        '''Примерный скрипт того, как работать с классом UserMessagesDB'''
-        db = UserMessagesDB(dsn="postgres://user:pass@localhost:5432/dbname")
-        await db.connect()
-        await db.create_table()
-        await db.save_message(message)
-        messages = await db.get_all_messages()
 
