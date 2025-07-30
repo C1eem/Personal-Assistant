@@ -13,7 +13,7 @@ model = DeepSeekAPI(DEEP_API_TOKEN)
 async def start_handler(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
     print("start agent")
-    response = await run_agent(message)  # Добавляем await
+    response = await run_agent(message)
     print("agent is done")
     await message.answer(response)
 
