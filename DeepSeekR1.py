@@ -10,12 +10,11 @@ class DeepSeekAPI:
         }
         self.model = "deepseek/deepseek-r1:free"
 
-    def ask(self, prompt):
-
+    def ask(self, text):
         data = {
             "model": self.model,
             "messages": [
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": text}
             ]
         }
 
@@ -24,13 +23,11 @@ class DeepSeekAPI:
         if response.status_code == 200:
             choices = response.json().get("choices", [])
             if choices:
-                # Уберём лишние пробелы и перейдём на нижний регистр (по необходимости)
-                label = choices[0].get("message", {}).get("content", "").strip()
-                return label
+                return choices[0].get("message", {}).get("content", "").strip()
             else:
-                return "Нет ответа от модели"
+                return "No response from model"
         else:
-            return f"Ошибка {response.status_code}: {response.text}"
+            return f"Error {response.status_code}: {response.text}"
 
     def classify(self, text):
         prompt = (

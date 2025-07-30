@@ -49,7 +49,7 @@ print(f"Всего чанков: {len(all_splits)}")
 print("Создание эмбеддингов...")
 embeddings = HuggingFaceEmbeddings(
     model_name='sentence-transformers/all-MiniLM-L6-v2',
-    model_kwargs={'device': 'cpu'},
+    model_kwargs={'device': 'cuda'},
 )
 
 vector_store = Chroma(
