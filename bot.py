@@ -1,9 +1,12 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types
-from config import *
 from agent import run_agent
+import os
+from dotenv import load_dotenv
 
-bot = Bot(token=BOT_TOKEN)
+load_dotenv()
+
+bot = Bot(token=os.environ["BOT_TOKEN"])
 dp = Dispatcher()
 
 
