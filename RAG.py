@@ -13,9 +13,9 @@ embeddings = HuggingFaceEmbeddings(
 )
 
 vector_store = Chroma(
-    collection_name="prompt_engineering",
+    collection_name="wine_knowledge_db",
     embedding_function=embeddings,
-    persist_directory="./promptengineering_db",
+    persist_directory="./wine_knowledge_db",
 )
 
 prompt_template = ChatPromptTemplate.from_template("""

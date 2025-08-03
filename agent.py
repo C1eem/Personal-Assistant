@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-llm = DeepSeekAPI("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")
+llm = DeepSeekAPI(os.environ["DEEP_API_TOKEN"])
 
 
 def clean_json_string(raw_str: str) -> str:
