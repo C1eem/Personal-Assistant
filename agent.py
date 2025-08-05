@@ -6,12 +6,34 @@ from DeepSeekR1 import DeepSeekAPI
 from config import *
 from aiogram import types
 from database import UserMessagesDB
+import json
+import re
+from RAG import ask_question
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
 llm = DeepSeekAPI(os.environ["DEEP_API_TOKEN"])
+
+
+def clean_json_string(raw_str: str) -> str:
+    """
+    Удаляет markdown-разметку вида:
+    ```json
+    {...}
+    ```
+    и возвращает чистый JSON внутри.
+    Работает при наличии переносов и пробелов.
+    """
+    pattern = r"```json\s*(.*?)\s*```"
+    match = re.search(pattern, raw_str, re.DOTALL | re.IGNORECASE)
+    if match:
+        cleaned = match.group(1).strip()
+        print(f"[clean_json_string] Удалена обёртка. Результат:\n{cleaned}")
+        return cleaned
+    else:
+        print("[clean_json_string] Обёртка не найдена, возвращаем строку как есть.")
+        return raw_str.strip()
 
 
 class GraphState(TypedDict):
@@ -22,6 +44,7 @@ class GraphState(TypedDict):
     documents: List[str]  # Найденные документы (для вопросов)
     status: str  # Текущий статус обработки
     next_node: str  # Следующий узел для перехода
+    collected_info: Dict[str, Any]
 
 
 def classify_message(state: GraphState) -> Dict[str, Any]:
@@ -30,25 +53,31 @@ def classify_message(state: GraphState) -> Dict[str, Any]:
     response = llm.classify(text=message).lower()
 
     if "спам" in response:
-        return {"status": "spam", "next_node": "save_to_db"}
+        print("Сообщение определено как спам")
+        return {"status": "spam", "next_node": "END", "response": "Пожалуйста, не присылайте бессмысленные сообщения"}
     elif "заявка" in response:
+        print("Сообщение определено как заявка")
         return {"status": "application", "next_node": "collect_info"}
     else:
+        print("Сообщение определено как вопрос")
         return {"status": "question", "next_node": "retrieve"}
 
 
 def retrieve(state: GraphState) -> Dict[str, Any]:
     """Поиск информации по вопросу"""
+    text = state["message"]
+    response = ask_question(text)
     # Здесь должен быть реальный поиск документов
     return {
         "documents": ["Документ 1", "Документ 2"],
-        "next_node": "grade_documents",
-        "response": "Найдена информация по вашему вопросу"
+        "next_node": END,
+        "response": response
     }
 
 
 def grade_documents(state: GraphState) -> Dict[str, Any]:
     """Оценка релевантности документов"""
+    print("grade_documents")
     return {
         "documents": state["documents"],
         "next_node": "generate",
@@ -58,28 +87,46 @@ def grade_documents(state: GraphState) -> Dict[str, Any]:
 
 def generate(state: GraphState) -> Dict[str, Any]:
     """Генерация финального ответа"""
+    print("generate")
     return {
-        "response": f"Ответ на основе документов: {state['documents']}",
+        "response": f"{state['documents']}",
         "next_node": END
     }
 
 
 def collect_info(state: GraphState) -> Dict[str, Any]:
-    """Сбор информации от клиента"""
-    #collected_data = llm.collect_info(state["message"])
-    collected_data = {"text": state["message"], "user_id": state["user"].from_user}
+    print("collect_info")
+    collected_json_str = llm.collect_info(state["message"])
+    print(f"collected_json_str (repr): {repr(collected_json_str)}")
+
+    cleaned_json = clean_json_string(collected_json_str)
+    print(f"Очищенный JSON-стринг:\n{cleaned_json}")
+
+    try:
+        collected_data = json.loads(cleaned_json)
+        print(f"Распарсенные данные: {collected_data}")
+    except json.JSONDecodeError as e:
+        print(f"Ошибка при парсинге JSON: {e}")
+        collected_data = {}
+
     return {
-        "response": f"Собрана информация: {collected_data}",
-        "next_node": "save_to_db"
+        "response": f"Благодарим за обращение, в ближайшее время с вами свяжутся!",
+        "next_node": "save_to_db",
+        "collected_info": collected_data
     }
 
 
 async def save_to_db(state: GraphState) -> Dict[str, Any]:
-    """Сохранение информации в базу данных"""
+    print("save_to_db")
     db = UserMessagesDB(DSN)
     await db.connect()
     await db.create_table()
-    await db.save_message(state["user"])
+
+    contact_info = state.get("collected_info", {}).get("contact_info")
+    fio = state.get("collected_info", {}).get("fio")
+    product = state.get("collected_info", {}).get("product")
+    await db.save_message(state["user"], contact_info, fio, product)
+
     return {
         "status": "completed",
         "next_node": END
@@ -107,12 +154,12 @@ workflow.add_conditional_edges(
     {
         "retrieve": "retrieve",
         "collect_info": "collect_info",
-        "save_to_db": "save_to_db"
+        "END": END
     }
 )
 
 # Добавляем линейные переходы
-workflow.add_edge("retrieve", "grade_documents")
+workflow.add_edge("retrieve", END)
 workflow.add_edge("grade_documents", "generate")
 workflow.add_edge("generate", END)
 workflow.add_edge("collect_info", "save_to_db")

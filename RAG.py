@@ -1,6 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from DeepSeekR1 import DeepSeekAPI
 from dotenv import load_dotenv
 import os
@@ -13,9 +13,9 @@ embeddings = HuggingFaceEmbeddings(
 )
 
 vector_store = Chroma(
-    collection_name="prompt_engineering",
+    collection_name="wine_knowledge_db",
     embedding_function=embeddings,
-    persist_directory="./promptengineering_db",
+    persist_directory="./wine_knowledge_db",
 )
 
 prompt_template = ChatPromptTemplate.from_template("""
