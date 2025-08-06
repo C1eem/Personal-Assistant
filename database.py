@@ -1,15 +1,39 @@
-import asyncpg
 from aiogram import types
+import asyncpg
 
 class UserMessagesDB:
+    """
+    Класс пользовательской базы данных
+    """
     def __init__(self, dsn: str):
+        """
+        Инициализирует объект с параметром подключения к базе данных
+
+        Args:
+            dsn (str): Строка подключения к базе данных
+
+        Returns:
+            None
+        """
         self.dsn = dsn
         self.pool = None
 
     async def connect(self):
+        """
+        Подключение к серверу базы данных
+
+        Returns:
+            None
+        """
         self.pool = await asyncpg.create_pool(self.dsn)
 
     async def create_table(self):
+        """
+        Создание таблицы пользовательских сообщений
+
+        Returns:
+            None
+        """
         query = '''
                 CREATE TABLE IF NOT EXISTS user_requests (
                     id SERIAL PRIMARY KEY,
@@ -34,6 +58,18 @@ class UserMessagesDB:
                            contact_info: str = None,
                            fio: str = None,
                            product_interest: str = None):
+        """
+        Сохранение сообщения в базе данных
+
+        Args:
+            message (Message): объект сообщения от пользователя
+            contact_info (str): строка с контактными данными пользователя
+            fio (str): фио пользователя
+            product_interest (str): желаемый продукт
+
+        Returns:
+            None
+        """
         query = '''
         INSERT INTO user_requests (
             message_id,
@@ -52,7 +88,6 @@ class UserMessagesDB:
 
         raw_date = message.date if message.date else None
         if raw_date:
-            # Преобразуем в datetime без timezone
             db_date = raw_date.replace(tzinfo=None)
         else:
             db_date = None
@@ -72,10 +107,3 @@ class UserMessagesDB:
                 fio,
                 product_interest
             )
-
-    async def get_all_messages(self):
-        async with self.pool.acquire() as conn:
-            rows = await conn.fetch('SELECT * FROM user_messages ORDER BY created at DESC')
-            return [dict(row) for row in rows]
-
-
