@@ -1,11 +1,12 @@
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
-from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 import os
 
-WINES_DIR = "data/wines"
-REGIONS_DIR = "data/regions"
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from config import WINES_DIR, REGIONS_DIR
+
 
 def load_documents_from_folder(folder_path):
     """Загружает все файлы из указанной папки как документы"""

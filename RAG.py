@@ -1,9 +1,11 @@
+import os
+
+from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+
 from DeepSeekR1 import DeepSeekAPI
-from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
@@ -39,11 +41,5 @@ def ask_question(question):
 
     formatted_prompt = prompt_template.format(question=question, context=docs_content)
 
-    answer = llm.ask(formatted_prompt)
-    return answer
-
-if __name__ == "__main__":
-    question = "Какое вино подходит к стейку?"
-    answer = ask_question(question)
-    print("Question:", question)
-    print("Answer:", answer)
+    response = llm.ask(formatted_prompt)
+    return response

@@ -17,7 +17,6 @@ def install_dependencies():
 
 def run_files(max_attempts=3, delay=5):
     """Запускает файлы проекта с повторными попытками"""
-    # Список файлов для запуска
     files_to_run = [
         "RAG_data.py",
         "bot.py"
@@ -34,7 +33,7 @@ def run_files(max_attempts=3, delay=5):
                 print(f"🚀 Попытка {attempt}/{max_attempts} запуска {file}...")
                 subprocess.check_call([sys.executable, file])
                 print(f"✅ {file} успешно запущен!")
-                break  # Выход из цикла при успешном запуске
+                break
             except subprocess.CalledProcessError as e:
                 print(f"❌ Ошибка при запуске {file}: {e}")
                 if attempt < max_attempts:

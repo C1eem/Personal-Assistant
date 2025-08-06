@@ -1,8 +1,10 @@
+import os
+
 import asyncio
 from aiogram import Bot, Dispatcher, types
-from agent import run_agent
-import os
 from dotenv import load_dotenv
+
+from agent import run_agent
 
 load_dotenv()
 

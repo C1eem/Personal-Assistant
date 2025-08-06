@@ -1,5 +1,5 @@
-import asyncpg
 from aiogram import types
+import asyncpg
 
 class UserMessagesDB:
     def __init__(self, dsn: str):
@@ -52,7 +52,6 @@ class UserMessagesDB:
 
         raw_date = message.date if message.date else None
         if raw_date:
-            # Преобразуем в datetime без timezone
             db_date = raw_date.replace(tzinfo=None)
         else:
             db_date = None
