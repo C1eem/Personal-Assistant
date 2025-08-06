@@ -1,7 +1,19 @@
 import requests
 
 class DeepSeekAPI:
-    def __init__(self, api_key):
+    """
+    Класс, реализующий подключение и запросы к сервису DeepSeek
+    """
+    def __init__(self, api_key: str):
+        """
+        Инициализирует объект подключения к DeepSeek
+
+        Args:
+            api_key (str):  API-ключ подключения к сервису
+
+        Returns:
+            None
+        """
         self.api_key = api_key
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
         self.headers = {
@@ -11,6 +23,15 @@ class DeepSeekAPI:
         self.model = "deepseek/deepseek-r1:free"
 
     def ask(self, text):
+        """
+        Реализует обычный запрос к DeepSeek
+
+        Args:
+            text (str): входной промпт для модели DeepSeek
+
+        Returns:
+             str: ответ модели
+        """
         data = {
             "model": self.model,
             "messages": [
@@ -30,6 +51,15 @@ class DeepSeekAPI:
             return f"Error {response.status_code}: {response.text}"
 
     def classify(self, text):
+        """
+        Реализует запрос к DeepSeek для классификации сообщения
+
+        Args:
+            text (str): входной текст пользователя
+
+        Returns:
+            str: ответ модели
+        """
         prompt = (
             f"Проанализируй следующий текст и классифицируй его по одной из меток: заявка, вопрос или спам.\n"
             f"ВАЖНО, что эти сообщения адресуются конкретной компании и нерелевантные сообщения должны уходить "
@@ -63,6 +93,15 @@ class DeepSeekAPI:
             return f"Ошибка {response.status_code}: {response.text}"
 
     def collect_info(self, text):
+        """
+        Реализует запрос к DeepSeek для извлечения информации из сообщения
+
+        Args:
+            text (str): входной текст пользователя
+
+        Returns:
+            str: ответ модели
+        """
         prompt = (
             f"Следующий текст является заявкой, которая потенциально должна принести компании прибыль\n"
             f"Проанализируй текст и пойми какие данные из списка присутствуют в тексте\n"

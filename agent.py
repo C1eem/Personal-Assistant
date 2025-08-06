@@ -21,11 +21,15 @@ llm = DeepSeekAPI(os.environ["DEEP_API_TOKEN"])
 
 def clean_json_string(raw_str: str) -> str:
     """
-    Удаляет markdown-разметку вида:
-    ```json
-    {...}
-    ```
-    и возвращает чистый JSON внутри.
+    Преобразует строку определенного формата в строку, содержащую чистый JSON
+
+    Args:
+        raw_str (str): строку формата:
+        ```json
+        {...}
+        ```
+    Returns:
+        str: строку, содержащую чистый JSON внутри.
     """
     pattern = r"```json\s*(.*?)\s*```"
     match = re.search(pattern, raw_str, re.DOTALL | re.IGNORECASE)
@@ -39,18 +43,36 @@ def clean_json_string(raw_str: str) -> str:
 
 
 class GraphState(TypedDict):
-    """Определение структуры состояния графа"""
+    """
+    Определение структуры состояния графа
+
+    Attributes:
+        user (Message): объект сообщения принимаемый на входе телеграмм-ботом
+        message (str): текст сообщения
+        response (str): сообщение для обратной связи пользователю
+        status (str): текущий статус обработки сообщения
+        next_node (str): узел выполнения, следующий за текущим
+        collected_info (Dict[str, Any]): список информации из сообщения пользователя для созранения в базу данных
+    """
     user: types.Message
     message: str
     response: str
-    documents: List[str]
     status: str
     next_node: str
     collected_info: Dict[str, Any]
 
 
 def classify_message(state: GraphState) -> Dict[str, Any]:
-    """Классификация входящего сообщения"""
+    """
+    Классификация входящего сообщения
+
+    Args:
+        state (GraphState): текущее состояние графа
+
+    Returns:
+        Dict: словарь обновленного состояния графа
+
+    """
     message = state["message"]
     response = llm.classify(text=message).lower()
 
@@ -66,7 +88,15 @@ def classify_message(state: GraphState) -> Dict[str, Any]:
 
 
 def retrieve(state: GraphState) -> Dict[str, Any]:
-    """Поиск информации по вопросу"""
+    """
+    Поиск информации по вопросу
+
+    Args:
+        state (GraphState): текущее состояние графа
+
+    Returns:
+        Dict: словарь обновленного состояния графа"""
+
     text = state["message"]
     response = ask_question(text)
     return {
@@ -75,6 +105,15 @@ def retrieve(state: GraphState) -> Dict[str, Any]:
     }
 
 def collect_info(state: GraphState) -> Dict[str, Any]:
+    """
+    Собирает контактную информацию из сообщения пользователя
+
+    Args:
+        state (GraphState): текущее состояние графа
+
+    Returns:
+        Dict: словарь обновленного состояния графа
+    """
     print("collect_info")
     collected_json_str = llm.collect_info(state["message"])
     print(f"collected_json_str (repr): {repr(collected_json_str)}")
@@ -97,6 +136,15 @@ def collect_info(state: GraphState) -> Dict[str, Any]:
 
 
 async def save_to_db(state: GraphState) -> Dict[str, Any]:
+    """
+    Сохраняет информацию в базу данных
+
+    Args:
+        state (GraphState): текущее состояние графа
+
+    Returns:
+        Dict: словарь обновленного состояния графа
+    """
     print("save_to_db")
     db = UserMessagesDB(DSN)
     await db.connect()
@@ -143,7 +191,15 @@ with open("../graph_image.png", "wb") as png:
     png.write(graph_image)
 
 async def run_agent(message: types.Message) -> str:
-    """Асинхронный запуск агента для обработки сообщения"""
+    """
+    Асинхронный запуск агента для обработки сообщения
+
+    Args:
+        message (Message): объект сообщения от пользователя
+
+    Returns:
+        last_response (str): Ответ пользователю
+    """
     inputs = {"user": message, "message": message.text}
     last_response = "Не удалось обработать запрос."
 

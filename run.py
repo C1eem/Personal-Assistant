@@ -5,7 +5,12 @@ import sys
 
 
 def install_dependencies():
-    """Устанавливает зависимости из requirements.txt"""
+    """
+    Устанавливает зависимости из requirements.txt
+
+    Returns:
+        None
+    """
     try:
         #subprocess.check_call([sys.executable, "-m", "pip", "install", "Cython==3.1.2"])
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
@@ -16,7 +21,16 @@ def install_dependencies():
 
 
 def run_files(max_attempts=3, delay=5):
-    """Запускает файлы проекта с повторными попытками"""
+    """
+    Запускает файлы проекта с повторными попытками
+
+    Args:
+        max_attempts (int): количество попыток запуска файлов
+        delay (int): задержка между попытками
+
+    Returns:
+        None
+    """
     files_to_run = [
         "RAG_data.py",
         "bot.py"

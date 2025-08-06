@@ -8,8 +8,16 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from config import WINES_DIR, REGIONS_DIR
 
 
-def load_documents_from_folder(folder_path):
-    """Загружает все файлы из указанной папки как документы"""
+def load_documents_from_folder(folder_path: str):
+    """
+    Загружает файлы из folder_path
+
+    Args:
+        folder_path (str): путь к папке с файлами
+
+    Returns:
+         documents (Array): массив загруженных документов
+    """
     documents = []
     for filename in os.listdir(folder_path):
         if filename.endswith(".md"):

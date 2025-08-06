@@ -35,6 +35,15 @@ prompt_template = ChatPromptTemplate.from_template("""
 llm = DeepSeekAPI(api_key=os.environ["DEEP_API_TOKEN"])
 
 def ask_question(question):
+    """
+    Функция для генерации ответа на вопрос с системой RAG
+
+    Args:
+        question (str): входной вопрос пользователя
+
+    Returns:
+        str: ответ модели
+    """
 
     retrieved_docs = vector_store.similarity_search(question, k=3)
     docs_content = "\n".join([doc.page_content for doc in retrieved_docs])

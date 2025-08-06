@@ -14,6 +14,15 @@ dp = Dispatcher()
 
 @dp.message()
 async def start_handler(message: types.Message):
+    """
+    Обрабатывает любое сообщение от пользователя телеграмм-боту
+
+    Args:
+        message (Message): объект сообщения от пользователя
+
+    Returns:
+        None
+    """
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
     print("start agent")
     response = await run_agent(message)
@@ -22,6 +31,12 @@ async def start_handler(message: types.Message):
 
 
 async def main():
+    """
+    Запуск бота
+
+    Returns:
+        None
+    """
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
